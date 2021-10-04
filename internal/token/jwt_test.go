@@ -4,17 +4,17 @@ import "testing"
 
 func TestJWT(t *testing.T) {
 	t.Run("create JWT", func(t *testing.T) {
-		wantUser := "user1"
+		wantUserId := 2
 		wantRoleId := 1
 
-		tokenString, err := NewJWT("user1", 1)
+		tokenString, err := NewJWT(wantUserId, wantRoleId)
 		unexpectedErr(t, err)
 
 		got, err := ParseJWT(tokenString)
 		unexpectedErr(t, err)
 
-		if got.Username != wantUser {
-			t.Errorf("username: got %s want %s", got.Username, wantUser)
+		if got.User_id != wantUserId {
+			t.Errorf("username: got %d want %d", got.User_id, wantUserId)
 		}
 		if got.Role_id != wantRoleId {
 			t.Errorf("role_id: got %d want %d", got.Role_id, wantRoleId)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
 	"github.com/ilyapetrovMO/WFMTtest/internal/token"
@@ -10,22 +9,39 @@ import (
 
 func (app *application) managerOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tokstr := r.Header.Get("Authorization")
-
-		if !strings.Contains(tokstr, "Bearer") {
-			app.unauthorizedResponse(w, r)
+		tokstr, err := app.getTokenFromHeader(&r.Header)
+		if err != nil {
+			app.unauthorizedResponse(w, r, err.Error())
 			return
 		}
 
-		tokstr = strings.TrimPrefix(tokstr, "Bearer")
-		tokstr = strings.TrimSpace(tokstr)
-
-		usrclaims, err := token.ParseJWT(tokstr)
+		claims, err := token.ParseJWT(tokstr)
 		switch {
 		case err != nil:
 			fallthrough
-		case usrclaims.Role_id != db.ROLE_MANAGER:
-			app.unauthorizedResponse(w, r)
+		case claims.Role_id != db.ROLE_MANAGER:
+			app.unauthorizedResponse(w, r, "invalid token")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) userOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokstr, err := app.getTokenFromHeader(&r.Header)
+		if err != nil {
+			app.unauthorizedResponse(w, r, err.Error())
+			return
+		}
+
+		claims, err := token.ParseJWT(tokstr)
+		switch {
+		case err != nil:
+			fallthrough
+		case claims.Role_id != db.ROLE_USER:
+			app.unauthorizedResponse(w, r, "invalid token")
 			return
 		}
 

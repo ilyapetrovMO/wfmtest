@@ -31,3 +31,24 @@ func (p *ProductModel) CreateProduct(ctx context.Context, name, description stri
 
 	return newpr, nil
 }
+
+func (p *ProductModel) GetProducts(ctx context.Context) ([]*Product, error) {
+	rows, err := p.DB.Query(ctx, "select product_id, name, description from products")
+	if err != nil {
+		return nil, err
+	}
+
+	products := []*Product{}
+
+	for rows.Next() {
+		pr := &Product{}
+		err = rows.Scan(&pr.Product_id, &pr.Name, &pr.Description)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, pr)
+	}
+
+	return products, nil
+}

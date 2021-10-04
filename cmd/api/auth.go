@@ -21,17 +21,17 @@ func (app *application) authenticationHandler(w http.ResponseWriter, r *http.Req
 		app.errorResponse(w, r, http.StatusBadRequest, "malformed json")
 	}
 
-	usr, err := app.models.Users.GetUser(r.Context(), creds.Username)
+	usr, err := app.models.Users.GetUserByUsrname(r.Context(), creds.Username)
 	if err == db.ErrRecordNotFound {
-		app.unauthorizedResponse(w, r)
+		app.unauthorizedResponse(w, r, "user not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(usr.Password_hash), []byte(creds.Password))
 	if err != nil {
-		app.unauthorizedResponse(w, r)
+		app.unauthorizedResponse(w, r, "incorrect password")
 	}
 
-	tokenstr, err := token.NewJWT(creds.Username, int(usr.Role_id))
+	tokenstr, err := token.NewJWT(int(usr.User_id), int(usr.Role_id))
 	if err != nil {
 		fmt.Printf("error creating token: %s", err)
 		app.internalServerErrorResponse(w, r)

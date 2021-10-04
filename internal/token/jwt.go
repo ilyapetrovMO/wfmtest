@@ -1,25 +1,40 @@
 package token
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-var dummySecret = []byte("secret")
+var (
+	dummySecret      = []byte("secret")
+	ErrTokenNotValid = errors.New("token could not be validated")
+)
 
 type UserClaims struct {
-	Username string
-	Role_id  int
+	*jwt.StandardClaims
+	User_id int
+	Role_id int
 }
 
-func NewJWT(username string, role_id int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": username,
-		"role_id":  role_id,
-	})
+type User struct {
+	User_id int
+	Role_id int
+}
 
-	tokenString, err := token.SignedString(dummySecret)
+func NewJWT(user_id, role_id int) (string, error) {
+	t := jwt.New(jwt.SigningMethodHS256)
+	t.Claims = &UserClaims{
+		&jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
+		},
+		user_id,
+		role_id,
+	}
+
+	tokenString, err := t.SignedString(dummySecret)
 	if err != nil {
 		return "", err
 	}
@@ -27,20 +42,23 @@ func NewJWT(username string, role_id int) (string, error) {
 	return tokenString, nil
 }
 
-func ParseJWT(tokenString string) (*UserClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func ParseJWT(tokenString string) (*User, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unepxected signing method: %v", token.Header["alg"])
 		}
 
 		return dummySecret, nil
 	})
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		username := claims["username"].(string)
-		roleid := claims["role_id"].(float64)
-		return &UserClaims{Username: username, Role_id: int(roleid)}, nil
-	} else {
+	if err != nil {
 		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*UserClaims); !ok {
+		userid := claims.User_id
+		roleid := claims.Role_id
+		return &User{User_id: userid, Role_id: roleid}, nil
+	} else {
+		return nil, ErrTokenNotValid
 	}
 }

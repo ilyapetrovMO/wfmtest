@@ -9,10 +9,14 @@ func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, st
 	}
 }
 
-func (app *application) unauthorizedResponse(w http.ResponseWriter, r *http.Request) {
-	app.errorResponse(w, r, http.StatusUnauthorized, "unauthorized")
+func (app *application) unauthorizedResponse(w http.ResponseWriter, r *http.Request, msg string) {
+	app.errorResponse(w, r, http.StatusUnauthorized, msg)
 }
 
 func (app *application) internalServerErrorResponse(w http.ResponseWriter, r *http.Request) {
 	app.errorResponse(w, r, http.StatusInternalServerError, "internal server error")
+}
+
+func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Request, msg string) {
+	app.errorResponse(w, r, http.StatusBadRequest, msg)
 }

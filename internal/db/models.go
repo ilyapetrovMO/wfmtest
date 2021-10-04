@@ -18,11 +18,13 @@ const (
 type Models struct {
 	Users    UserModel
 	Products ProductModel
+	Orders   OrderModel
 }
 
 func NewModels(db *pgxpool.Pool) Models {
 	return Models{
 		UserModel{db},
 		ProductModel{db},
+		OrderModel{db},
 	}
 }
