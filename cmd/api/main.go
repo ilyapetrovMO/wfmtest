@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -18,33 +18,33 @@ func main() {
 	app := &application{}
 	connstr := os.Getenv("DATABASE_URL")
 	if connstr == "" {
-		fmt.Print("ERROR: no DATABASE_URL\n")
+		log.Fatal("ERROR: no DATABASE_URL\n")
 		return
 	}
-	portstr := os.Getenv("PORT")
-	if portstr == "" {
-		fmt.Print("ERROR: no PORT\n")
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("ERROR: no PORT")
 		return
 	}
 
 	dbpool, err := ConnectDb(connstr)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
+		log.Fatalf("ERROR: %s\n", err)
 		return
 	}
 
 	app.models = db.NewModels(dbpool)
 
 	srv := http.Server{
-		Addr:    ":" + portstr,
+		Addr:    ":" + port,
 		Handler: app.routes(),
 	}
 
-	fmt.Printf("listening on port %s\n", portstr)
+	log.Printf("listening on port %s\n", port)
 
 	err = srv.ListenAndServe()
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
+		log.Fatalf("ERROR: %s\n", err)
 		return
 	}
 }
