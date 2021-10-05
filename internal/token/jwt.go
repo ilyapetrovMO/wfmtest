@@ -54,7 +54,7 @@ func ParseJWT(tokenString string) (*User, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*UserClaims); !ok {
+	if claims, ok := token.Claims.(*UserClaims); ok {
 		userid := claims.UserId
 		roleid := claims.RoleId
 		return &User{UserId: userid, RoleId: roleid}, nil
