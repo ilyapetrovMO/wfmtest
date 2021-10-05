@@ -9,6 +9,8 @@ import (
 func (app *application) routes() http.Handler {
 	mux := httprouter.New()
 
+	mux.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowed)
+
 	mux.HandlerFunc(http.MethodGet, "/healthcheck", app.healthcheckHandler)
 
 	mux.HandlerFunc(http.MethodPost, "/auth", app.authenticationHandler)

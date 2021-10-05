@@ -29,7 +29,7 @@ func main() {
 
 	dbpool, err := ConnectDb(connstr)
 	if err != nil {
-		log.Fatalf("ERROR: %s\n", err)
+		log.Fatalf("ERROR: %s\n%s", err, connstr)
 		return
 	}
 
