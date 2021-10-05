@@ -1,7 +1,11 @@
+## Clone repo, build the app and start postgres:
 ```
 $ git clone https://github.com/ilyapetrovMO/wfmtest.git
 $ cd wfmtest
-$ docker-compose up
-$ docker run -v ./migrations:migrations -- netowork host migrate/migrate
+$ docker-compose up -d
+```
+## Populate the DB:
+```
+$ docker run -v ./migrations:migrations --network host migrate/migrate
     -path=/migrations/ -database postgres://postgres:postgres@localhost:8888/wfmtest up
 ```

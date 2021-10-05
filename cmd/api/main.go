@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -15,6 +16,7 @@ type application struct {
 }
 
 func main() {
+
 	app := &application{}
 	connstr := os.Getenv("DATABASE_URL")
 	if connstr == "" {
@@ -50,9 +52,16 @@ func main() {
 }
 
 func ConnectDb(connstr string) (*pgxpool.Pool, error) {
+	// Give time for postgres to finish its setup script(in docker-compose)
+	time.Sleep(time.Second * 2)
 	dbpool, err := pgxpool.Connect(context.Background(), connstr)
 	if err != nil {
 		return nil, err
 	}
-	return dbpool, nil
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cancel()
+	err = dbpool.Ping(ctx)
+
+	return dbpool, err
 }
