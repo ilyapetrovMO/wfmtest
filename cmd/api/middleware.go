@@ -20,7 +20,7 @@ func (app *application) managerOnly(next http.Handler) http.Handler {
 		case err != nil:
 			fallthrough
 		case claims.RoleId != db.ROLE_MANAGER:
-			app.unauthorizedResponse(w, r, "unauthorized")
+			app.unauthorizedResponse(w, r, err.Error())
 			return
 		}
 

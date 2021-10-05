@@ -1,14 +1,23 @@
 # WFM Test
 
-## Setup:
+Available on https://wfmtest.herokuapp.com/products (expect a slight pause on first request).
+
+------------------------------------------------------------------------
+## Database structure:
+<iframe width="560" height="315" src='https://dbdiagram.io/embed/615ca2ed825b5b0146229a76'> </iframe>
+
+-------------------------------------------------------------------------
+## Local Setup:
 Requires git, docker and docker-compose.
-### Clone repo, build the app and start postgres:
+
+
+Clone repo, build the app and start postgres:
 ```
 $ git clone https://github.com/ilyapetrovMO/wfmtest.git
 $ cd wfmtest
 $ docker-compose up -d
 ```
-### Populate the DB:
+ Populate the DB:
 ```
 $ docker run -v $PWD/migrations:/migrations --network host migrate/migrate
     -path=/migrations/ -database 'postgres://postgres:postgres@localhost:8888/wfmtest?sslmode=disable' up
