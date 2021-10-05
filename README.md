@@ -6,6 +6,6 @@ $ docker-compose up -d
 ```
 ## Populate the DB:
 ```
-$ docker run -v ./migrations:migrations --network host migrate/migrate
-    -path=/migrations/ -database postgres://postgres:postgres@localhost:8888/wfmtest up
+$ docker run -v $PWD/migrations:/migrations --network host migrate/migrate
+    -path=/migrations/ -database 'postgres://postgres:postgres@localhost:8888/wfmtest?sslmode=disable' up
 ```
