@@ -1,3 +1,5 @@
+// +heroku goVersion 1.17
+// +heroku install ./cmd/api/...
 module github.com/ilyapetrovMO/WFMTtest
 
 go 1.17

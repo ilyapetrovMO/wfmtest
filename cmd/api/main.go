@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,7 +18,12 @@ func main() {
 	app := &application{}
 	connstr := os.Getenv("DATABASE_URL")
 	if connstr == "" {
-		fmt.Print("ERROR: no DATABASE_URL")
+		fmt.Print("ERROR: no DATABASE_URL\n")
+		return
+	}
+	portstr := os.Getenv("PORT")
+	if portstr == "" {
+		fmt.Print("ERROR: no PORT\n")
 		return
 	}
 
@@ -31,14 +34,13 @@ func main() {
 	}
 
 	app.models = db.NewModels(dbpool)
-	port := flag.Int("port", 8080, "port to listen on")
 
 	srv := http.Server{
-		Addr:    ":" + strconv.Itoa(*port),
+		Addr:    ":" + portstr,
 		Handler: app.routes(),
 	}
 
-	fmt.Printf("listening on port %d\n", *port)
+	fmt.Printf("listening on port %s\n", portstr)
 
 	err = srv.ListenAndServe()
 	if err != nil {
