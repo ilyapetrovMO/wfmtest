@@ -16,11 +16,11 @@ func (app *application) managerOnly(next http.Handler) http.Handler {
 		}
 
 		claims, err := token.ParseJWT(tokstr)
-		switch {
-		case err != nil:
-			fallthrough
-		case claims.RoleId != db.ROLE_MANAGER:
+		if err != nil {
 			app.unauthorizedResponse(w, r, err.Error())
+		}
+		if claims.RoleId != db.ROLE_MANAGER {
+			app.unauthorizedResponse(w, r, "must be manager")
 			return
 		}
 

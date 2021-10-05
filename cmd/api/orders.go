@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -33,10 +34,12 @@ func (app *application) createOrderHandler(w http.ResponseWriter, r *http.Reques
 	err = app.readJSON(r, orderbody)
 	if err != nil {
 		app.badRequestResponse(w, r, err.Error())
+		return
 	}
 
 	order, err := app.models.Orders.CreateOrder(r.Context(), int64(claims.UserId), int64(orderbody.Product_id), int64(orderbody.Amount), time.Now())
 	if err != nil {
+		log.Printf("ERROR: failed to create order\n%s", err.Error())
 		app.internalServerErrorResponse(w, r)
 		return
 	}
@@ -171,7 +174,7 @@ func (app *application) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.models.Orders.CancellOrder(r.Context(), order.OrderId, time.Now())
+	err = app.models.Orders.CancelOrder(r.Context(), order.OrderId, time.Now())
 	if err == db.ErrRecordNotFound {
 		app.badRequestResponse(w, r, "no record with specified id")
 	}

@@ -2,6 +2,9 @@
 
 Available on https://wfmtest.herokuapp.com/products (expect a slight pause on first request).
 
+Postman collection:
+https://www.getpostman.com/collections/bd0a787364d51580dc91
+
 ------------------------------------------------------------------------
 ## Database structure:
 <iframe width="560" height="315" src='https://dbdiagram.io/embed/615ca2ed825b5b0146229a76'> </iframe>
