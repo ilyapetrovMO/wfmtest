@@ -12,16 +12,16 @@ type UserModel struct {
 }
 
 type User struct {
-	User_id       int64  `json:"user_id"`
-	Username      string `json:"username"`
-	Password_hash string `json:"password_hash"`
-	Role_id       int64  `json:"role_id"`
+	UserId       int64  `json:"user_id"`
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+	RoleId       int64  `json:"role_id"`
 }
 
 func (u *UserModel) GetUserByUsrname(ctx context.Context, username string) (*User, error) {
 	row := u.DB.QueryRow(ctx, "select user_id, username, password_hash, role_id from users where username=$1", username)
 	user := &User{}
-	err := row.Scan(&user.User_id, &user.Username, &user.Password_hash, &user.Role_id)
+	err := row.Scan(&user.UserId, &user.Username, &user.PasswordHash, &user.RoleId)
 
 	if err == pgx.ErrNoRows {
 		return nil, ErrRecordNotFound
@@ -36,7 +36,7 @@ func (u *UserModel) GetUserById(ctx context.Context, userid int) (*User, error) 
 	row := u.DB.QueryRow(ctx, "select user_id, username, password_hash, role_id from users where user_id=$1", userid)
 
 	user := &User{}
-	err := row.Scan(&user.User_id, &user.Username, &user.Password_hash, &user.Role_id)
+	err := row.Scan(&user.UserId, &user.Username, &user.PasswordHash, &user.RoleId)
 	if err == pgx.ErrNoRows {
 		return nil, ErrRecordNotFound
 	} else if err != nil {

@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"reflect"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -18,18 +18,26 @@ func TestCreateProduct(t *testing.T) {
 	want := &Product{
 		Name:        "productTest",
 		Description: "descriptionTest",
+		CreatedAt:   time.Now(),
 	}
 
 	pm := &ProductModel{dbpool}
-	got, err := pm.CreateProduct(context.Background(), want.Name, want.Description)
+	got, err := pm.CreateProduct(context.Background(), want.Name, want.Description, want.CreatedAt)
 	unexpectedErr(t, err)
 
-	want.Product_id = got.Product_id
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v\nwant %v", got, want)
+	dbpool.Exec(context.Background(), "delete from products where product_id=$1", got.ProductId)
+
+	if got.Name != want.Name {
+		t.Errorf("name: got %s want %s", got.Name, want.Name)
+	}
+	if got.Description != want.Description {
+		t.Errorf("name: got %s want %s", got.Description, want.Description)
+	}
+	if got.CreatedAt.Day() != want.CreatedAt.Day() {
+		t.Errorf("name: got %s want %s", got.CreatedAt, want.CreatedAt)
 	}
 
-	dbpool.Exec(context.Background(), "delete from products where product_id=$1", got.Product_id)
+	dbpool.Exec(context.Background(), "delete from products where product_id=$1", got.ProductId)
 }
 
 func TestGetProducts(t *testing.T) {

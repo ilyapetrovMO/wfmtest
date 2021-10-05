@@ -14,10 +14,10 @@ func TestGetUserByUsrname(t *testing.T) {
 	defer dbpool.Close()
 
 	want := &User{
-		User_id:       1,
-		Username:      "user1",
-		Role_id:       ROLE_USER,
-		Password_hash: "$2a$14$ymJHFkT1IO2PxAovxD83j.WNGpf5SqCP2zV9x/UoVzCMO6mvxDr4W",
+		UserId:       1,
+		Username:     "user1",
+		RoleId:       ROLE_USER,
+		PasswordHash: "$2a$14$ymJHFkT1IO2PxAovxD83j.WNGpf5SqCP2zV9x/UoVzCMO6mvxDr4W",
 	}
 
 	um := &UserModel{dbpool}
@@ -35,10 +35,10 @@ func TestGetUserById(t *testing.T) {
 	defer dbpool.Close()
 
 	want := &User{
-		User_id:       1,
-		Username:      "user1",
-		Role_id:       ROLE_USER,
-		Password_hash: "$2a$14$ymJHFkT1IO2PxAovxD83j.WNGpf5SqCP2zV9x/UoVzCMO6mvxDr4W",
+		UserId:       1,
+		Username:     "user1",
+		RoleId:       ROLE_USER,
+		PasswordHash: "$2a$14$ymJHFkT1IO2PxAovxD83j.WNGpf5SqCP2zV9x/UoVzCMO6mvxDr4W",
 	}
 
 	um := &UserModel{dbpool}

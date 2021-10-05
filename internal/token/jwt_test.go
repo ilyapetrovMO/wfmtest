@@ -13,11 +13,11 @@ func TestJWT(t *testing.T) {
 		got, err := ParseJWT(tokenString)
 		unexpectedErr(t, err)
 
-		if got.User_id != wantUserId {
-			t.Errorf("username: got %d want %d", got.User_id, wantUserId)
+		if got.UserId != wantUserId {
+			t.Errorf("username: got %d want %d", got.UserId, wantUserId)
 		}
-		if got.Role_id != wantRoleId {
-			t.Errorf("role_id: got %d want %d", got.Role_id, wantRoleId)
+		if got.RoleId != wantRoleId {
+			t.Errorf("role_id: got %d want %d", got.RoleId, wantRoleId)
 		}
 	})
 }

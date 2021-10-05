@@ -19,8 +19,8 @@ func (app *application) managerOnly(next http.Handler) http.Handler {
 		switch {
 		case err != nil:
 			fallthrough
-		case claims.Role_id != db.ROLE_MANAGER:
-			app.unauthorizedResponse(w, r, "invalid token")
+		case claims.RoleId != db.ROLE_MANAGER:
+			app.unauthorizedResponse(w, r, "unauthorized")
 			return
 		}
 
@@ -40,7 +40,7 @@ func (app *application) userOnly(next http.Handler) http.Handler {
 		switch {
 		case err != nil:
 			fallthrough
-		case claims.Role_id != db.ROLE_USER:
+		case claims.RoleId != db.ROLE_USER:
 			app.unauthorizedResponse(w, r, "invalid token")
 			return
 		}

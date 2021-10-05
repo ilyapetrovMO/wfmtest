@@ -19,9 +19,14 @@ type application struct {
 func main() {
 	app := &application{}
 	connstr := os.Getenv("DATABASE_URL")
+	if connstr == "" {
+		fmt.Print("ERROR: no DATABASE_URL")
+		return
+	}
+
 	dbpool, err := ConnectDb(connstr)
 	if err != nil {
-		fmt.Printf("ERROR: %s", err)
+		fmt.Printf("ERROR: %s\n", err)
 		return
 	}
 
@@ -37,7 +42,7 @@ func main() {
 
 	err = srv.ListenAndServe()
 	if err != nil {
-		fmt.Printf("ERROR: %s", err)
+		fmt.Printf("ERROR: %s\n", err)
 		return
 	}
 }

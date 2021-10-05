@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
 
 type Product struct {
 	Name        string `json:"name"`
@@ -15,7 +19,7 @@ func (app *application) createProductHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	newprod, err := app.models.Products.CreateProduct(r.Context(), prod.Name, prod.Description)
+	newprod, err := app.models.Products.CreateProduct(r.Context(), prod.Name, prod.Description, time.Now())
 	if err != nil {
 		app.internalServerErrorResponse(w, r)
 		return
@@ -38,10 +42,13 @@ func (app *application) getAllProductsHandler(w http.ResponseWriter, r *http.Req
 	products, err := app.models.Products.GetProducts(r.Context())
 	if err != nil {
 		app.internalServerErrorResponse(w, r)
+		fmt.Printf("err: %s", err)
+		return
 	}
 
 	if len(products) == 0 {
 		app.writeJSON(w, http.StatusOK, &dataJSON{"products": []struct{}{}})
+		return
 	}
 
 	dtoarr := []*Product{}
@@ -52,5 +59,6 @@ func (app *application) getAllProductsHandler(w http.ResponseWriter, r *http.Req
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"products": dtoarr})
 	if err != nil {
 		app.internalServerErrorResponse(w, r)
+		return
 	}
 }

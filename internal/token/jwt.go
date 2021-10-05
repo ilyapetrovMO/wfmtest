@@ -15,13 +15,13 @@ var (
 
 type UserClaims struct {
 	*jwt.StandardClaims
-	User_id int
-	Role_id int
+	UserId int
+	RoleId int
 }
 
 type User struct {
-	User_id int
-	Role_id int
+	UserId int
+	RoleId int
 }
 
 func NewJWT(user_id, role_id int) (string, error) {
@@ -55,9 +55,9 @@ func ParseJWT(tokenString string) (*User, error) {
 	}
 
 	if claims, ok := token.Claims.(*UserClaims); !ok {
-		userid := claims.User_id
-		roleid := claims.Role_id
-		return &User{User_id: userid, Role_id: roleid}, nil
+		userid := claims.UserId
+		roleid := claims.RoleId
+		return &User{UserId: userid, RoleId: roleid}, nil
 	} else {
 		return nil, ErrTokenNotValid
 	}
