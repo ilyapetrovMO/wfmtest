@@ -10,6 +10,9 @@ services:
     ports:
       - "8888:5432"
   server:
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@localhost:8888/wfmtest
+      - PORT=8080
     build:
       context: .
       dockerfile: Dockerfile
