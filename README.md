@@ -25,6 +25,20 @@ Create order (user only):
 $ BODY='{"product_id": 1, "amount": 10}'
 $ curl -X POST -H "Authorization: Bearer $USER_TOK" -d "$BODY" wfmtest.herokuapp.com/orders
 ```
+## Authorization scheme:
+Bearer authorization scheme is used to pass a JWT token. Token carries three claims:
+```
+{
+  "exp": 1633524512, // expiry date in unix time
+  "UserId": 1,       // user id
+  "RoleId": 2        // role id, where 1=manager and 2=user
+}
+```
+
+example token:
+`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzM1MjQ1MTIsIlVzZXJJZCI6MSwiUm9sZUlkIjoyfQ.Ph2Q98E9j-dlMesvCknYW-_wLQRNtv5aIjE8W_w8To4`
+check its contents on www.jwt.io
+
 
 ------------------------------------------------------------------------
 ## Database structure:
