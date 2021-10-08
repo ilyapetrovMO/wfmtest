@@ -1,16 +1,26 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
 	"github.com/ilyapetrovMO/WFMTtest/internal/token"
+	"github.com/ilyapetrovMO/WFMTtest/internal/validator"
 )
 
 func (app *application) createOrderHandler(w http.ResponseWriter, r *http.Request) {
+	input := &struct {
+		ProductId int `json:"product_id"`
+		Amount    int `json:"amount"`
+		UserId    int `json:"user_id"`
+	}{}
+
+	err := app.readJSON(w, r, input)
+	if err != nil {
+		app.badRequestResponse(w, r, err.Error())
+		return
+	}
+
 	tokstr, err := app.getTokenFromHeader(&r.Header)
 	if err != nil {
 		app.unauthorizedResponse(w, r, err.Error())
@@ -23,35 +33,44 @@ func (app *application) createOrderHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
-	orderbody := &struct {
-		Product_id int
-		Amount     int
-	}{}
-	err = app.readJSON(r, orderbody)
-	if err != nil {
-		app.badRequestResponse(w, r, err.Error())
+	if claims.UserId != input.UserId {
+		app.unauthorizedResponse(w, r, "unauthorized")
 		return
 	}
 
-	order, err := app.models.Orders.CreateOrder(r.Context(), int64(claims.UserId), int64(orderbody.Product_id), int64(orderbody.Amount), time.Now())
+	order := &db.Order{
+		ProductId: int64(input.ProductId),
+		Amount:    int64(input.Amount),
+		UserId:    int64(input.UserId),
+	}
+
+	v := validator.New()
+
+	db.ValidateOrder(v, order)
+
+	if !v.Valid() {
+		app.badRequestResponse(w, r, v.Errors())
+		return
+	}
+
+	err = app.models.Orders.Create(order)
 	if err != nil {
-		log.Printf("ERROR: failed to create order\n%s", err.Error())
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"order": order})
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) getOrdersForUser(w http.ResponseWriter, r *http.Request) {
+func (app *application) getOrdersForUserId(w http.ResponseWriter, r *http.Request) {
 	usrIdParam, err := app.readIDParam(r)
 	if err != nil {
 		app.badRequestResponse(w, r, "no valid query parameters given")
@@ -64,81 +83,69 @@ func (app *application) getOrdersForUser(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	usrClaim, err := token.ParseJWT(tokstr)
+	claims, err := token.ParseJWT(tokstr)
 	if err == token.ErrTokenNotValid {
 		app.unauthorizedResponse(w, r, err.Error())
 		return
 	}
 	if err != nil {
-		app.unauthorizedResponse(w, r, err.Error())
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
-	if usrIdParam != int64(usrClaim.UserId) {
+	if claims.RoleId != db.ROLE_MANAGER && usrIdParam != int64(claims.UserId) {
 		app.unauthorizedResponse(w, r, "unauthorized")
 		return
 	}
 
-	orders, err := app.models.Orders.GetOrdersForUser(r.Context(), int64(usrClaim.UserId))
-	if err == db.ErrRecordNotFound {
-		app.writeJSON(w, http.StatusOK, &dataJSON{"orders": [0]int{}})
-		return
-	}
+	orders, err := app.models.Orders.GetWithUserId(int64(claims.UserId))
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"orders": orders})
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) GetAllOrders(w http.ResponseWriter, r *http.Request) {
+func (app *application) getAllOrders(w http.ResponseWriter, r *http.Request) {
 	tokstr, err := app.getTokenFromHeader(&r.Header)
 	if err != nil {
-		app.badRequestResponse(w, r, err.Error())
-		return
-	}
-
-	usrClaim, err := token.ParseJWT(tokstr)
-	if err == token.ErrTokenNotValid {
 		app.unauthorizedResponse(w, r, err.Error())
 		return
 	}
+
+	claims, err := token.ParseJWT(tokstr)
 	if err != nil {
-		app.unauthorizedResponse(w, r, err.Error())
+		app.unauthorizedResponse(w, r, "invalid token")
 		return
 	}
 
-	if usrClaim.RoleId != db.ROLE_MANAGER {
+	if claims.RoleId != db.ROLE_MANAGER {
 		app.unauthorizedResponse(w, r, "unauthorized")
 		return
 	}
 
-	orders, err := app.models.Orders.GetOrders(r.Context())
-	if err == db.ErrRecordNotFound {
-		app.writeJSON(w, http.StatusOK, &dataJSON{"orders": [0]int{}})
-		return
-	}
+	orders, err := app.models.Orders.GetAll()
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"orders": orders})
 	if err != nil {
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 }
 
-func (app *application) CancelOrder(w http.ResponseWriter, r *http.Request) {
-	ordIdParam, err := app.readIDParam(r)
+func (app *application) deleteOrder(w http.ResponseWriter, r *http.Request) {
+	orderIdParam, err := app.readIDParam(r)
 	if err != nil {
-		app.badRequestResponse(w, r, "no valid query parameters given")
+		app.badRequestResponse(w, r, err.Error())
 		return
 	}
 
@@ -148,7 +155,7 @@ func (app *application) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usrClaim, err := token.ParseJWT(tokStr)
+	claims, err := token.ParseJWT(tokStr)
 	if err == token.ErrTokenNotValid {
 		app.unauthorizedResponse(w, r, err.Error())
 		return
@@ -158,36 +165,33 @@ func (app *application) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := app.models.Orders.GetOrderById(r.Context(), ordIdParam)
+	order, err := app.models.Orders.GetById(orderIdParam)
 	if err == db.ErrRecordNotFound {
 		app.badRequestResponse(w, r, "no record with specified id")
 		return
 	}
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
-	if usrClaim.UserId != int(order.UserId) {
+	if claims.UserId != int(order.UserId) {
 		app.unauthorizedResponse(w, r, "unauthorized")
 		return
 	}
 
-	err = app.models.Orders.CancelOrder(r.Context(), order.OrderId, time.Now())
+	err = app.models.Orders.Delete(order)
 	if err == db.ErrRecordNotFound {
 		app.badRequestResponse(w, r, "no record with specified id")
 	}
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"status": "ok"})
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		app.internalServerErrorResponse(w, r)
+		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 }

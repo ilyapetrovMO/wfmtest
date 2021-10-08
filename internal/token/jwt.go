@@ -2,7 +2,6 @@ package token
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -19,19 +18,14 @@ type UserClaims struct {
 	RoleId int
 }
 
-type User struct {
-	UserId int
-	RoleId int
-}
-
-func NewJWT(user_id, role_id int) (string, error) {
+func NewJWT(userId, roleId int) (string, error) {
 	t := jwt.New(jwt.SigningMethodHS256)
 	t.Claims = &UserClaims{
 		&jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 1).Unix(),
 		},
-		user_id,
-		role_id,
+		userId,
+		roleId,
 	}
 
 	tokenString, err := t.SignedString(dummySecret)
@@ -42,12 +36,8 @@ func NewJWT(user_id, role_id int) (string, error) {
 	return tokenString, nil
 }
 
-func ParseJWT(tokenString string) (*User, error) {
+func ParseJWT(tokenString string) (*UserClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unepxected signing method: %v", token.Header["alg"])
-		}
-
 		return dummySecret, nil
 	})
 	if err != nil {
@@ -55,9 +45,7 @@ func ParseJWT(tokenString string) (*User, error) {
 	}
 
 	if claims, ok := token.Claims.(*UserClaims); ok {
-		userid := claims.UserId
-		roleid := claims.RoleId
-		return &User{UserId: userid, RoleId: roleid}, nil
+		return claims, nil
 	} else {
 		return nil, ErrTokenNotValid
 	}

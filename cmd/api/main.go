@@ -2,36 +2,41 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/sirupsen/logrus"
 )
 
 type application struct {
 	models db.Models
+	logger *logrus.Logger
 }
 
 func main() {
+	log := logrus.New()
 
-	app := &application{}
+	app := &application{
+		logger: log,
+	}
+
 	connstr := os.Getenv("DATABASE_URL")
 	if connstr == "" {
-		log.Fatal("ERROR: no DATABASE_URL\n")
+		app.logger.Fatalf("ERROR: no DATABASE_URL\n")
 		return
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("ERROR: no PORT")
+		app.logger.Fatal("ERROR: no PORT")
 		return
 	}
 
-	dbpool, err := ConnectDb(connstr)
+	dbpool, err := connectDb(connstr)
 	if err != nil {
-		log.Fatalf("ERROR: %s\n%s", err, connstr)
+		app.logger.Fatalf("ERROR: %s\n%s", err, connstr)
 		return
 	}
 
@@ -42,16 +47,16 @@ func main() {
 		Handler: app.routes(),
 	}
 
-	log.Printf("listening on port %s\n", port)
+	app.logger.Printf("listening on port %s\n", port)
 
 	err = srv.ListenAndServe()
 	if err != nil {
-		log.Fatalf("ERROR: %s\n", err)
+		app.logger.Fatalf("ERROR: %s\n", err)
 		return
 	}
 }
 
-func ConnectDb(connstr string) (*pgxpool.Pool, error) {
+func connectDb(connstr string) (*pgxpool.Pool, error) {
 	// Give time for postgres to finish its setup script(in docker-compose)
 	time.Sleep(time.Second * 2)
 	dbpool, err := pgxpool.Connect(context.Background(), connstr)
