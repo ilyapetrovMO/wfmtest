@@ -1,44 +1,25 @@
 # WFM Test
 
-Available on https://wfmtest.herokuapp.com/products (expect a slight pause on first request).
+Available on https://wfmtest.herokuapp.com/products (free tier, expect wake up time).
 
 Postman collection:
 https://www.getpostman.com/collections/0523c21ae2b0f3c07be7
 
-Get user token:
-```
-$ BODY='{"username": "user1", "password": "user1"}'
-$ curl -X POST -i -d "$BODY" wfmtest.herokuapp.com/auth
-```
-Get manager token:
-```
-$ BODY='{"username": "manager1", "password": "manager1"}'
-$ curl -X POST -i -d "$BODY" wfmtest.herokuapp.com/auth
-```
-Get all orders (manager only):
-```
-$ curl -H "Authorization: Bearer $MANAGER_TOK" wfmtest.herokuapp.com/orders
-```
-
-Create order (user only):
-```
-$ BODY='{"product_id": 1, "amount": 10}'
-$ curl -X POST -H "Authorization: Bearer $USER_TOK" -d "$BODY" wfmtest.herokuapp.com/orders
-```
+Use one of the "Login as ..." requests first to get a fresh token and populate the `TOKEN` and `USERID` variables.
 
 -----------------------------
 ## Authorization scheme:
 Bearer authorization scheme is used to pass a JWT token. Token carries three claims:
 ```
 {
-  "exp": 1633524512, // expiry date in unix time
+  "exp": 1633524512,  // expiry date in unix time
   "user_id": 1,       // user id
   "role_id": 2        // role id, where 1=manager and 2=user
 }
 ```
 
 example token:
-`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzM1MjQ1MTIsIlVzZXJJZCI6MSwiUm9sZUlkIjoyfQ.Ph2Q98E9j-dlMesvCknYW-_wLQRNtv5aIjE8W_w8To4`
+`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MzM4MDExODQsInVzZXJfaWQiOjEsInJvbGVfaWQiOjJ9.Xcvn3x46AyGfPojPKSYhC7Yyzai-R4X54aj00_H-oQM`
 
 check its contents on www.jwt.io
 
