@@ -249,12 +249,6 @@ func (app *application) checkoutCartHandler(w http.ResponseWriter, r *http.Reque
 		}
 
 		orders = append(orders, order)
-
-		err = app.models.CartItem.Delete(ci)
-		if err != nil {
-			app.internalServerErrorResponse(w, r, err)
-			return
-		}
 	}
 
 	err = app.writeJSON(w, http.StatusOK, &dataJSON{"orders": orders})

@@ -40,6 +40,12 @@ func (o *OrderModel) CreateTx(cartItem *CartItem, product *Product, userId int64
 	VALUES ($1, $2, $3, $4)
 	RETURNING order_id, user_id, product_id, amount, created_at, version`
 
+	sqlCartItem := `
+	UPDATE cart_items
+	SET deleted_at = $1, version = version + 1
+	WHERE cart_item_id = $2 AND version = $3 AND deleted_at IS NULL
+	RETURNING version`
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
@@ -64,6 +70,14 @@ func (o *OrderModel) CreateTx(cartItem *CartItem, product *Product, userId int64
 		&order.Version,
 	)
 	if err != nil {
+		return nil, err
+	}
+
+	err = tx.QueryRow(ctx, sqlCartItem, time.Now(), cartItem.CartItemId, cartItem.Version).Scan(&cartItem.Version)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRecordNotFound
+		}
 		return nil, err
 	}
 

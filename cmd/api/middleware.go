@@ -22,7 +22,7 @@ func (app *application) managerOnly(next http.Handler) http.Handler {
 		if ok && claims.valid && claims.roleId == db.ROLE_MANAGER {
 			next.ServeHTTP(w, r)
 		} else {
-			app.unauthorizedResponse(w, r, "unauthorized manageronly")
+			app.unauthorizedResponse(w, r, "unauthorized")
 		}
 	})
 }
@@ -33,7 +33,7 @@ func (app *application) userOnly(next http.Handler) http.Handler {
 		if ok && claims.valid && claims.roleId == db.ROLE_USER {
 			next.ServeHTTP(w, r)
 		} else {
-			app.unauthorizedResponse(w, r, "unauthorized useronly")
+			app.unauthorizedResponse(w, r, "unauthorized")
 		}
 	})
 }

@@ -3,7 +3,7 @@
 Available on https://wfmtest.herokuapp.com/products (expect a slight pause on first request).
 
 Postman collection:
-https://www.getpostman.com/collections/bd0a787364d51580dc91
+https://www.getpostman.com/collections/0523c21ae2b0f3c07be7
 
 Get user token:
 ```
@@ -32,8 +32,8 @@ Bearer authorization scheme is used to pass a JWT token. Token carries three cla
 ```
 {
   "exp": 1633524512, // expiry date in unix time
-  "UserId": 1,       // user id
-  "RoleId": 2        // role id, where 1=manager and 2=user
+  "user_id": 1,       // user id
+  "role_id": 2        // role id, where 1=manager and 2=user
 }
 ```
 
