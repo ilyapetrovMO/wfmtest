@@ -21,7 +21,7 @@ func (app *application) routes() http.Handler {
 	mux.Handler(http.MethodGet, "/cart", app.userOnly(http.HandlerFunc(app.getUserCartAndItems)))
 	mux.Handler(http.MethodGet, "/carts", app.managerOnly(http.HandlerFunc(app.getAllCartsAndItems)))
 
-	mux.HandlerFunc(http.MethodGet, "/product", app.getAllProductsHandler)
+	mux.HandlerFunc(http.MethodGet, "/products", app.getAllProductsHandler)
 	mux.Handler(http.MethodPost, "/product", app.managerOnly(http.HandlerFunc(app.createProductHandler)))
 	mux.Handler(http.MethodPut, "/product", app.managerOnly(http.HandlerFunc(app.updateProductHandler)))
 
