@@ -14,8 +14,8 @@ var (
 
 type UserClaims struct {
 	*jwt.StandardClaims
-	UserId int
-	RoleId int
+	UserId int `json:"user_id"`
+	RoleId int `json:"role_id"`
 }
 
 func NewJWT(userId, roleId int) (string, error) {

@@ -25,7 +25,6 @@ func (app *application) routes() http.Handler {
 	mux.Handler(http.MethodPost, "/product", app.managerOnly(http.HandlerFunc(app.createProductHandler)))
 	mux.Handler(http.MethodPut, "/product", app.managerOnly(http.HandlerFunc(app.updateProductHandler)))
 
-	mux.Handler(http.MethodPost, "/order", app.userOnly(http.HandlerFunc(app.createOrderHandler)))
 	mux.Handler(http.MethodGet, "/order", app.managerOnly(http.HandlerFunc(app.getAllOrders)))
 	mux.Handler(http.MethodGet, "/order/user/:id", app.userOnly(http.HandlerFunc(app.getOrdersForUserId)))
 	mux.Handler(http.MethodDelete, "/order/:id", app.userOnly(http.HandlerFunc(app.deleteOrder)))
