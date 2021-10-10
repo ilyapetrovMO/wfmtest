@@ -12,9 +12,9 @@ import (
 
 type CartItem struct {
 	CartItemId  int64     `json:"cart_item_id"`
-	CartId      int64     `json:"cart_id"`
-	Name        string    `json:"product_name"`
-	Description string    `json:"product_description"`
+	CartId      int64     `json:"-"`
+	Name        string    `json:"product_name,omitempty"`
+	Description string    `json:"product_description,omitempty"`
 	ProductId   int64     `json:"product_id"`
 	Amount      int64     `json:"amount"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -132,6 +132,62 @@ func (c *CartItemModel) GetAllByUserId(userId int64) ([]*CartItem, error) {
 	}
 
 	return items, nil
+}
+
+func (c *CartItemModel) GetByProductId(productId int64) (*CartItem, error) {
+	sql := `
+	SELECT cart_item_id, cart_id, product_id, created_at, version, amount
+	FROM cart_items
+	WHERE product_id = $1 AND deleted_at IS NULL`
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	cartItem := &CartItem{}
+	err := c.DB.QueryRow(ctx, sql, productId).Scan(
+		&cartItem.CartItemId,
+		&cartItem.CartId,
+		&cartItem.ProductId,
+		&cartItem.CreatedAt,
+		&cartItem.Version,
+		&cartItem.Amount,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRecordNotFound
+		}
+		return nil, err
+	}
+
+	return cartItem, nil
+}
+
+func (c *CartItemModel) Update(item *CartItem) error {
+	sql := `
+	UPDATE cart_items
+	SET amount = $1, version = version + 1
+	WHERE cart_item_id = $2 AND version = $3 AND deleted_at IS NULL
+	RETURNING cart_item_id, cart_id, product_id, amount, created_at, version`
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	err := c.DB.QueryRow(ctx, sql, item.Amount, item.CartItemId, item.Version).Scan(
+		&item.CartItemId,
+		&item.CartId,
+		&item.ProductId,
+		&item.Amount,
+		&item.CreatedAt,
+		&item.Version,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrRecordNotFound
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (c *CartItemModel) Delete(item *CartItem) error {

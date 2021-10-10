@@ -17,9 +17,10 @@ func (app *application) routes() http.Handler {
 
 	mux.Handler(http.MethodPost, "/cart/item", app.userOnly(http.HandlerFunc(app.addToCartHandler)))
 	mux.Handler(http.MethodDelete, "/cart/item", app.userOnly(http.HandlerFunc(app.removeFromCartHandler)))
+	mux.Handler(http.MethodPut, "/cart/item", app.userOnly(http.HandlerFunc(app.updateCartItemHandler)))
 	mux.Handler(http.MethodPost, "/cart/checkout", app.userOnly(http.HandlerFunc(app.checkoutCartHandler)))
-	mux.Handler(http.MethodGet, "/cart", app.userOnly(http.HandlerFunc(app.getUserCartAndItems)))
-	mux.Handler(http.MethodGet, "/carts", app.managerOnly(http.HandlerFunc(app.getAllCartsAndItems)))
+	mux.Handler(http.MethodGet, "/cart", app.userOnly(http.HandlerFunc(app.getUserCartAndItemsHandler)))
+	mux.Handler(http.MethodGet, "/carts", app.managerOnly(http.HandlerFunc(app.getAllCartsAndItemsHandler)))
 
 	mux.HandlerFunc(http.MethodGet, "/products", app.getAllProductsHandler)
 	mux.Handler(http.MethodPost, "/product", app.managerOnly(http.HandlerFunc(app.createProductHandler)))

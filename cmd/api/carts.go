@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ilyapetrovMO/WFMTtest/internal/db"
+	"github.com/ilyapetrovMO/WFMTtest/internal/validator"
 )
 
 func (app *application) addToCartHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +24,28 @@ func (app *application) addToCartHandler(w http.ResponseWriter, r *http.Request)
 
 	claims, ok := r.Context().Value(userClaimsKey{}).(*userClaims)
 	if !ok || input.UserId != claims.userId {
-		app.unauthorizedResponse(w, r, "unathorized")
+		app.unauthorizedResponse(w, r, "unauthorized")
+		return
+	}
+
+	cart, err := app.models.Carts.GetByUserId(int64(claims.userId))
+	if err != nil {
+		app.internalServerErrorResponse(w, r, errors.New("expected to find cart, got none"))
+		return
+	}
+
+	newItem := &db.CartItem{
+		CartId:    cart.CartId,
+		ProductId: int64(input.ProductId),
+		Amount:    int64(input.Amount),
+	}
+
+	v := validator.New()
+
+	db.ValidateCartItem(v, newItem)
+
+	if !v.Valid() {
+		app.badRequestResponse(w, r, v.Errors())
 		return
 	}
 
@@ -37,30 +59,113 @@ func (app *application) addToCartHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if input.Amount > int(product.InStorage) {
-		app.badRequestResponse(w, r, "not enough product in storage")
-		return
-	}
+	exists := false
 
-	cart, err := app.models.Carts.GetByUserId(int64(claims.userId))
+	existingItem, err := app.models.CartItem.GetByProductId(product.ProductId)
 	if err != nil {
-		app.internalServerErrorResponse(w, r, errors.New("expected to find cart, got none"))
+		if !errors.Is(err, db.ErrRecordNotFound) {
+			app.internalServerErrorResponse(w, r, err)
+			return
+		}
+
+	} else {
+		exists = true
+	}
+
+	if exists {
+		if existingItem.Amount+newItem.Amount > product.InStorage {
+			app.badRequestResponse(w, r, fmt.Sprintf("not enough product in storage, %d available", product.InStorage))
+			return
+		}
+
+		existingItem.Amount += newItem.Amount
+		err := app.models.CartItem.Update(existingItem)
+		if err != nil {
+			app.internalServerErrorResponse(w, r, err)
+			return
+		}
+
+		err = app.writeJSON(w, http.StatusCreated, &dataJSON{"item": existingItem})
+		if err != nil {
+			app.internalServerErrorResponse(w, r, err)
+			return
+		}
+
 		return
 	}
 
-	cartItem := &db.CartItem{
-		CartId:    cart.CartId,
-		ProductId: product.ProductId,
-		Amount:    int64(input.Amount),
+	if newItem.Amount > product.InStorage {
+		app.badRequestResponse(w, r, fmt.Sprintf("not enough product in storage, %d available", product.InStorage))
+		return
 	}
 
-	err = app.models.CartItem.Create(cartItem)
+	err = app.models.CartItem.Create(newItem)
 	if err != nil {
 		app.internalServerErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusCreated, &dataJSON{"item": cartItem})
+	err = app.writeJSON(w, http.StatusCreated, &dataJSON{"item": newItem})
+	if err != nil {
+		app.internalServerErrorResponse(w, r, err)
+		return
+	}
+}
+
+func (app *application) updateCartItemHandler(w http.ResponseWriter, r *http.Request) {
+	input := &struct {
+		CartItemId int `json:"cart_item_id"`
+		UserId     int `json:"user_id"`
+		Amount     int `json:"amount"`
+	}{}
+
+	err := app.readJSON(w, r, input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	claims, ok := r.Context().Value(userClaimsKey{}).(*userClaims)
+	if !ok || input.UserId != claims.userId {
+		app.unauthorizedResponse(w, r, "unauthorized")
+		return
+	}
+
+	existingItem, _, err := app.models.CartItem.GetById(int64(input.CartItemId))
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			app.badRequestResponse(w, r, "no cart item with specified cart_item_id")
+			return
+		}
+		app.internalServerErrorResponse(w, r, err)
+		return
+	}
+
+	if input.Amount <= 0 {
+		app.badRequestResponse(w, r, "amount: must be a positive non-zero value")
+		return
+	}
+
+	existingItem.Amount = int64(input.Amount)
+
+	product, err := app.models.Products.GetById(existingItem.ProductId)
+	if err != nil {
+		app.internalServerErrorResponse(w, r, err)
+		return
+	}
+
+	if existingItem.Amount > product.InStorage {
+		app.badRequestResponse(w, r, fmt.Sprintf("not enough product in storage, %d available", product.InStorage))
+		return
+	}
+
+	err = app.models.CartItem.Update(existingItem)
+	if err != nil {
+		app.internalServerErrorResponse(w, r, errors.New("could not update item"))
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, &dataJSON{"cart_item": existingItem})
 	if err != nil {
 		app.internalServerErrorResponse(w, r, err)
 		return
@@ -124,7 +229,7 @@ type Cart struct {
 	Items []*db.CartItem
 }
 
-func (app *application) getAllCartsAndItems(w http.ResponseWriter, r *http.Request) {
+func (app *application) getAllCartsAndItemsHandler(w http.ResponseWriter, r *http.Request) {
 	carts, err := app.models.Carts.GetAll()
 	if err != nil {
 		app.internalServerErrorResponse(w, r, err)
@@ -157,7 +262,7 @@ func (app *application) getAllCartsAndItems(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (app *application) getUserCartAndItems(w http.ResponseWriter, r *http.Request) {
+func (app *application) getUserCartAndItemsHandler(w http.ResponseWriter, r *http.Request) {
 	userId, err := app.readUserIDParam(r)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
